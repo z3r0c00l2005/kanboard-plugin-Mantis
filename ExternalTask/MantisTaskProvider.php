@@ -3,13 +3,65 @@
 namespace Kanboard\Plugin\Mantis\ExternalTask;
 
 use Kanboard\Core\Base;
+use Kanboard\Core\ExternalTask\ExternalTask;
 use Kanboard\Core\ExternalTask\ExternalTaskProviderInterface;
 use Kanboard\Core\ExternalTask\NotFoundException;
-use SoapClient;
+use Kanboard\Core\ExternalTask\ExternalTaskException;
+
+#use SoapClient;
 
 class MantisTaskProvider extends Base implements ExternalTaskProviderInterface
 {
-    protected $soapClient;
+    private $client;
+
+    #public function __construct($container)
+    public function gogogo($uri)
+    {
+        $mantisUrl = $this->configModel->get('mantis_url','');
+        $mantisApiToken = $this->configModel->get('mantis_api_token','');
+
+        $this->client = new MantisRestClient($mantisUrl, $mantisApiToken);
+    }
+
+    /**
+     * Fetch an external task
+     *
+     * $uri format expected by Kanboard plugin (depends on original implementation).
+     * Here we assume uri contains the mantis issue id like "mantis:123"
+     */
+    public function fetch($uri,$projectID)
+    {
+        $this->gogogo($uri);	
+        // parse issue id from uri
+        if (preg_match('/(\d+)$/', $uri, $m)) {
+            $issueId = intval($m[1]);
+        } else {
+            throw new ExternalTaskException('Invalid Mantis URI: ' . $uri);
+        }
+
+        try {
+            $issue = $this->client->getIssue($issueId);
+        } catch (\Exception $e) {
+            throw new ExternalTaskException('Unable to fetch issue: ' . $e->getMessage());
+        }
+
+        if (empty($issue)) {
+            throw new ExternalTaskException('Issue not found: ' . $issueId);
+        }
+
+        // Map Mantis fields to Kanboard expected fields
+        $values = [
+            'id' => $issue['id'], 
+       	    'title' => isset($issue['summary']) ? $issue['summary'] : (isset($issue['field']['summary']) ? $issue['field']['summary'] : ''),
+            'description' => isset($issue['description']) ? $issue['description'] : (isset($issue['field']['description']) ? $issue['field']['description'] : ''),
+            'reference' => $uri,
+            'external_provider' => 'mantis',
+            // Example date mapping; adapt to actual response keys
+            'date_creation' => isset($issue['created_at']) ? strtotime($issue['created_at']) : 0,
+            'date_modification' => isset($issue['updated_at']) ? strtotime($issue['updated_at']) : 0,
+        ];
+	return new MantisTask($uri, $values);
+    }
 
     public function getName()
     {
@@ -26,39 +78,29 @@ class MantisTaskProvider extends Base implements ExternalTaskProviderInterface
         return t('Add a new Mantis issue');
     }
 
-    public function fetch($uri, $project_id)
-    {
-        $issue = $this->getMantisIssue($uri);
-        if (empty($issue)) {
-            throw new NotFoundException('Mantis issue not found');
-        }
-
-        return new MantisTask($uri, $issue);
-    }
-
     public function save($uri, array $formValues, array &$formErrors)
     {
         return true;
     }
 
-    public function getImportFormTemplate()
+    public function getImportFormTemplate(array $values = [])
     {
-        return 'Mantis:task/import';
+	return 'Mantis:task/import';
     }
 
-    public function getCreationFormTemplate()
+    public function getCreationFormTemplate(array $values = [])
     {
-        return 'Mantis:task/creation';
+	return 'Mantis:task/creation';
     }
 
-    public function getModificationFormTemplate()
+    public function getModificationFormTemplate(array $values = [])
     {
-        return 'Mantis:task/modification';
+	return 'Mantis:task/modification';
     }
 
-    public function getViewTemplate()
+    public function getViewTemplate(array $values = [])
     {
-        return 'Mantis:task/view';
+	return 'Mantis:task/view';
     }
 
     public function buildTaskUri(array $formValues)
@@ -66,41 +108,10 @@ class MantisTaskProvider extends Base implements ExternalTaskProviderInterface
         return $this->getBaseUrl() . '/view.php?id=' . $formValues['id'];
     }
 
-    protected function getSoapClient()
-    {
-        if (!isset($this->soapClient)) {
-            $this->soapClient = new SoapClient($this->getWdslUri());
-        }
-
-        return $this->soapClient;
-    }
-
-    protected function getWdslUri()
-    {
-        return $this->getBaseUrl() . '/api/soap/mantisconnect.php?wsdl';
-    }
-
     protected function getBaseUrl()
     {
-        return $this->configModel->get('mantis_url');
+	return $this->configModel->get('mantis_url');
+	#return 'http://mantisbt/';
     }
 
-    protected function getMantisIssue($uri)
-    {
-        $matches = array();
-        if (preg_match('/id=(\d+)$/', $uri, $matches)) {
-            $id = $matches[1];
-            try {
-                $issue = $this->getSoapClient()->__soapCall('mc_issue_get', array(
-                    'username' => $this->configModel->get('mantis_username'),
-                    'password' => $this->configModel->get('mantis_password'),
-                    'issue_id' => $id,
-                ));
-
-                return $issue;
-            } catch (\Exception $e) {
-                $this->logger->error('SOAP request failed : ' . $e->getMessage());
-            }
-        }
-    }
 }

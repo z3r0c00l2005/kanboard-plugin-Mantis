@@ -54,11 +54,21 @@ class Plugin extends Base
 
     public function getPluginVersion()
     {
-        return '1.0.0';
+        return '1.0.1';
     }
 
     public function getPluginHomepage()
     {
         return 'https://github.com/biblibre/kanboard-plugin-Mantis';
+    }
+
+    public function getClasses()
+    {
+        return [
+            'Plugin\Mantis\ExternalTask' => [
+                'MantisTaskProvider',
+                'MantisRestClient',
+            ],
+        ];
     }
 }

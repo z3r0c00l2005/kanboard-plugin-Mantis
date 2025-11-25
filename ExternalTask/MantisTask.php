@@ -22,7 +22,7 @@ class MantisTask implements ExternalTaskInterface
 
     public function getIssueId()
     {
-        return $this->issue->id;
+	return isset($this->issue['id']) ? $this->issue['id'] : null;
     }
 
     public function getIssue()
@@ -32,11 +32,16 @@ class MantisTask implements ExternalTaskInterface
 
     public function getFormValues()
     {
-        $title = sprintf('MT %d %s [%s]', $this->issue->id, $this->issue->summary, $this->issue->project->name);
-        return array(
-            'title' => $title,
-            'description' => $this->issue->description,
-            'reference' => $this->issue->id,
+	$title = sprintf(
+            'MT %d %s',
+            isset($this->issue['id']) ? $this->issue['id'] : 0,
+            isset($this->issue['title']) ? $this->issue['title'] : ''
         );
+
+        return [
+            'title' => $title,
+            'description' => isset($this->issue['description']) ? $this->issue['description'] : '',
+            'reference' => $this->getUri(),
+        ];        
     }
 }
