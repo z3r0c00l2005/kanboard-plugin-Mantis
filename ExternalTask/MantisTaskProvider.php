@@ -48,7 +48,8 @@ class MantisTaskProvider extends Base implements ExternalTaskProviderInterface
         if (empty($issue)) {
             throw new ExternalTaskException('Issue not found: ' . $issueId);
         }
-
+	error_log('In fetch method');
+	#error_log( print_r($issue,true));
         // Map Mantis fields to Kanboard expected fields
         $values = [
             'id' => $issue['id'], 
@@ -56,10 +57,15 @@ class MantisTaskProvider extends Base implements ExternalTaskProviderInterface
             'description' => isset($issue['description']) ? $issue['description'] : (isset($issue['field']['description']) ? $issue['field']['description'] : ''),
             'reference' => $uri,
             'external_provider' => 'mantis',
-            // Example date mapping; adapt to actual response keys
-            'date_creation' => isset($issue['created_at']) ? strtotime($issue['created_at']) : 0,
-            'date_modification' => isset($issue['updated_at']) ? strtotime($issue['updated_at']) : 0,
+            'date_submitted' => isset($issue['created_at']) ? strtotime($issue['created_at']) : 0,
+            'last_updated' => isset($issue['updated_at']) ? strtotime($issue['updated_at']) : 0,
+	    'reporter' => isset($issue['reporter']) ? $issue['reporter'] : '',
+	    'handler' => isset($issue['handler']) ? $issue['handler'] : '',
+	    'status' => isset($issue['status']) ? $issue['status'] : '',
+	    'tags' => isset($issue['tags']) ? $issue['tags'] : '',
+	    'project' => isset($issue['project']) ? $issue['project'] : '',
         ];
+	error_log( print_r($values['tags'], true) );	
 	return new MantisTask($uri, $values);
     }
 
