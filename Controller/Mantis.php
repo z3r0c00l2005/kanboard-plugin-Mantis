@@ -20,7 +20,7 @@ class Mantis extends BaseController {
 
         $mantisIssue = $mantisTask->getIssue();
         $response = array(
-            'status' => $mantisIssue->status->name,
+            'status' => $mantisIssue['status']['name'],
         );
 
         $this->response->json($response);
