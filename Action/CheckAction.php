@@ -20,7 +20,7 @@ class CheckAction extends Base
         });
         $provider = $this->externalTaskManager->getProvider('Mantis');
         foreach ($tasks as $task) {
-            $t = $provider->fetch($task['external_uri']);
+            $t = $provider->fetch($task['external_uri'],$this->getProjectId());
             $last_sync = $this->taskMetadataModel->get($task['id'], 'mantis_last_sync', '0');
             $last_updated = $t->getIssue()->last_updated;
             if ($last_updated > $last_sync) {
