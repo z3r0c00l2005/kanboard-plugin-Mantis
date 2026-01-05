@@ -55,7 +55,7 @@ class MantisTaskProvider extends Base implements ExternalTaskProviderInterface
             'id' => $issue['id'], 
        	    'title' => isset($issue['summary']) ? $issue['summary'] : (isset($issue['field']['summary']) ? $issue['field']['summary'] : ''),
             'description' => isset($issue['description']) ? $issue['description'] : (isset($issue['field']['description']) ? $issue['field']['description'] : ''),
-            'reference' => $uri,
+            'reference' => $issue['id'],
             'external_provider' => 'mantis',
             'date_submitted' => isset($issue['created_at']) ? strtotime($issue['created_at']) : 0,
             'last_updated' => isset($issue['updated_at']) ? strtotime($issue['updated_at']) : 0,
