@@ -41,7 +41,7 @@ class MantisTask implements ExternalTaskInterface
         return [
             'title' => $title,
             'description' => isset($this->issue['description']) ? $this->issue['description'] : '',
-            'reference' => $this->getUri(),
+            'reference' => $this->issue['id'],
         ];        
     }
 }
